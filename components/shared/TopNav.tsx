@@ -30,7 +30,7 @@ export function TopNav() {
     <header className="sticky top-0 z-50 border-b border-hairline bg-canvas/95 backdrop-blur-sm">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-2 px-4 sm:h-16 sm:gap-4 sm:px-6">
         <Link
-          href={signedIn ? "/generate" : "/how-it-works"}
+          href={signedIn ? "/dashboard" : "/"}
           className="shrink-0 text-ink"
         >
           <Logo />

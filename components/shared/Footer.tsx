@@ -39,7 +39,11 @@ export function Footer() {
           </nav>
         </div>
 
-        <div className="mt-8 flex flex-col gap-2 border-t border-hairline pt-6 text-xs text-muted-soft sm:flex-row sm:items-center sm:justify-between">
+        <p className="mt-6 text-center text-xs text-muted-soft">
+          {COMPANY.aiDisclaimer}
+        </p>
+
+        <div className="mt-6 flex flex-col gap-2 border-t border-hairline pt-6 text-xs text-muted-soft sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
             <p>© {new Date().getFullYear()} {COMPANY.product} · {COMPANY.name}</p>
             <p>{COMPANY.license}</p>

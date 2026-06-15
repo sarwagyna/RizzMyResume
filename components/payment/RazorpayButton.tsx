@@ -11,6 +11,7 @@ import {
 } from "@/lib/razorpay";
 import { useFormStore } from "@/stores/formStore";
 import type { PaymentOrderResponse } from "@/lib/types";
+import { getClientEnv } from "@/lib/env";
 
 interface RazorpayButtonProps {
   inputId: string;
@@ -53,9 +54,7 @@ export function RazorpayButton({
       const razorpayKey = getRazorpayPublicKey(order.key);
       await loadRazorpayScript();
 
-      const appUrl =
-        process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
-        window.location.origin;
+      const appUrl = getClientEnv().NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
 
       const rzp = new window.Razorpay({
         key: razorpayKey,

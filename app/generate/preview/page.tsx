@@ -15,6 +15,7 @@ import { RetentionNotice } from "@/components/preview/RetentionNotice";
 import { invokeFunction } from "@/lib/supabase/client";
 import { PageContainer } from "@/components/shared/PageContainer";
 import { useFormStore } from "@/stores/formStore";
+import { COMPANY } from "@/lib/company";
 
 interface PreviewResult {
   generation_id: string;
@@ -155,6 +156,9 @@ export default function PreviewPage() {
           </p>
           <ProgressBar value={progress} label="Progress" />
           <RetentionNotice className="mt-6 text-left" compact />
+          <p className="mt-3 text-center text-xs text-muted-soft">
+            {COMPANY.aiDisclaimer}
+          </p>
         </Card>
       </PageContainer>
     );
@@ -193,6 +197,10 @@ export default function PreviewPage() {
       </div>
 
       <RetentionNotice />
+
+      <p className="text-center text-xs text-muted-soft">
+        {COMPANY.aiDisclaimer}
+      </p>
 
       <ResumePreviewViewer generationId={preview.generation_id} />
 

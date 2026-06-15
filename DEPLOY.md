@@ -8,7 +8,7 @@
 |---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes |
-| `NEXT_PUBLIC_APP_URL` | Yes — `https://getRizzMyResume.in` in prod |
+| `NEXT_PUBLIC_APP_URL` | Yes — `https://rizzmyresume.sarwagyna.com` in prod |
 | `NEXT_PUBLIC_RAZORPAY_KEY_ID` | Yes |
 
 ### Supabase Edge Functions (secrets)
@@ -78,21 +78,47 @@ Your CLI session is on the wrong Supabase account. `npx supabase projects list` 
 
 **Edge function (optional backup)** — `cleanup-resumes` can still be invoked manually with `CRON_SECRET`; production cleanup is handled by migration 007.
 
-## Pre-launch verification
+## Production launch checklist
 
-### Razorpay KYC (OQ1 — blocking)
+Complete these before pointing `rizzmyresume.sarwagyna.com` at Vercel:
 
-1. Create a test order in Razorpay dashboard
-2. Confirm ₹50 UPI/card transactions settle without hold
-3. Configure webhook URL: `https://YOUR_PROJECT.supabase.co/functions/v1/payment?action=verify`
+### Vercel environment
 
-### LaTeXLite timeout (OQ2 — blocking)
+| Variable | Production value |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | `https://jjvmrfgffordqwzdzznt.supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon / publishable key |
+| `NEXT_PUBLIC_APP_URL` | `https://rizzmyresume.sarwagyna.com` |
+| `NEXT_PUBLIC_RAZORPAY_KEY_ID` | `rzp_live_…` (live key after KYC) |
+
+### Supabase Dashboard
+
+1. **Authentication → URL Configuration**
+   - Site URL: `https://rizzmyresume.sarwagyna.com`
+   - Redirect URLs: `https://rizzmyresume.sarwagyna.com/auth/callback`
+2. **Edge Function secrets** — all keys from `.env.example`
+3. **Set `ALLOWED_ORIGIN`** = `https://rizzmyresume.sarwagyna.com` (restricts CORS on edge functions)
+4. Run migrations **006** + **007** (24h cleanup)
+5. Deploy all edge functions (`.\scripts\supabase-deploy.ps1`)
+
+### Resend
+
+- Verify sending domain in Resend (e.g. `sarwagyna.com` or `rizzmyresume.sarwagyna.com`)
+- Set `RESEND_API_KEY` in Supabase secrets
+
+### Razorpay (OQ1 — blocking)
+
+1. Complete KYC and switch to **live** keys in Vercel + Supabase
+2. Confirm ₹50 UPI/card transactions settle
+3. **Payment verification is client-side** after checkout (`payment?action=verify` with user JWT). No Razorpay webhook is required for the current flow.
+
+### LaTeXLite (OQ2 — blocking)
 
 1. Run 3–5 sample generations with full student profiles
 2. Confirm compilation completes within 30 seconds
 3. Verify PDF is single-page and under 500KB
 
-### E2E test matrix
+## Pre-launch verification
 
 | # | Flow | Expected |
 |---|---|---|

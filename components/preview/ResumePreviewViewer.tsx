@@ -58,7 +58,7 @@ function ProtectedPreviewCanvas({ generationId }: { generationId: string }) {
 
       try {
         const pdfjs = await import("pdfjs-dist");
-        pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+        pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
         const data = await fetchPreviewPdf(generationId);
         if (cancelled) return;

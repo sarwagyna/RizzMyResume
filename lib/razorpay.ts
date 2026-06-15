@@ -1,3 +1,5 @@
+import { getClientEnv } from "@/lib/env";
+
 declare global {
   interface Window {
     Razorpay: new (options: RazorpayOptions) => RazorpayInstance;
@@ -45,10 +47,8 @@ export function loadRazorpayScript(): Promise<void> {
 }
 
 export function getRazorpayPublicKey(fallbackFromServer?: string | null): string {
-  const key =
-    fallbackFromServer ||
-    process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ||
-    "";
+  const env = getClientEnv();
+  const key = fallbackFromServer || env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
 
   if (!key) {
     throw new Error(

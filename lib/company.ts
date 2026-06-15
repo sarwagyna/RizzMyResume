@@ -8,6 +8,8 @@ export const COMPANY = {
   effectiveDate: "June 2026",
   copyrightYear: 2026,
   license: "Proprietary — All Rights Reserved",
+  productionUrl: "https://rizzmyresume.sarwagyna.com",
+  aiDisclaimer: "AI can make mistakes. Review your resume before paying.",
 } as const;
 
 export const SUPPORT_EMAIL = COMPANY.email;

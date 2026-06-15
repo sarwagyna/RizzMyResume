@@ -8,7 +8,8 @@
   "scripts": {
     "dev": "next dev",
     "dev:clean": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\" && next dev",
-    "build": "next build",
+    "build": "node scripts/copy-pdf-worker.mjs && next build",
+    "postinstall": "node scripts/copy-pdf-worker.mjs",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit"

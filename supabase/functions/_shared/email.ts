@@ -19,7 +19,7 @@ export async function sendResumeEmail(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: "Rizz My Resume <noreply@getRizzMyResume.in>",
+      from: "Rizz My Resume <noreply@sarwagyna.com>",
       to: [to],
       subject: "Your Rizz My Resume resume is ready",
       html: `

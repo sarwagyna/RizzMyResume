@@ -80,3 +80,6 @@ venv/
 .cache/
 .turbo/
 *.local
+
+# generated assets
+public/pdf.worker.min.mjs

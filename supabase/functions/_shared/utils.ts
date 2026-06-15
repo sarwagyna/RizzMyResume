@@ -1,13 +1,25 @@
-export const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+export function getCorsHeaders(): Record<string, string> {
+  const allowedOrigin =
+    Deno.env.get("ALLOWED_ORIGIN")?.trim() ||
+    Deno.env.get("APP_URL")?.trim() ||
+    "*";
+
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    Vary: "Origin",
+  };
+}
+
+/** @deprecated Use getCorsHeaders() — kept for static re-exports during deploy. */
+export const corsHeaders = getCorsHeaders();
 
 export function jsonResponse(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...getCorsHeaders(), "Content-Type": "application/json" },
   });
 }
 

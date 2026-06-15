@@ -17,4 +17,6 @@ Already configured via CLI:
 2. Supabase sends email with magic link
 3. User clicks link → `/auth/callback` → redirected to `/generate`
 
-For production, add your production URL to **Authentication → URL Configuration → Redirect URLs**, e.g. `https://getRizzMyResume.in/auth/callback`.
+For production, add your production URL to **Authentication → URL Configuration → Redirect URLs**, e.g. `https://rizzmyresume.sarwagyna.com/auth/callback`.
+
+Set **Site URL** to `https://rizzmyresume.sarwagyna.com` in the same screen.
