@@ -1,0 +1,3 @@
+# Deprecated — use v5_4_prompt.txt
+
+This file is kept for reference only. The active prompt is `v5_4_prompt.txt`.

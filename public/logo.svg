@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 248 40" role="img" aria-label="Rizz My Resume">
+  <defs>
+    <linearGradient id="logo-fill" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0a0a"/>
+      <stop offset="45%" stop-color="#333333"/>
+      <stop offset="100%" stop-color="#111111"/>
+    </linearGradient>
+    <filter id="logo-shadow" x="-8%" y="-20%" width="116%" height="150%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="0.8" flood-color="#000" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+  <path d="M6 36 C 70 28, 120 34, 242 30" fill="none" stroke="#111" stroke-width="2.25" stroke-linecap="round" opacity="0.12"/>
+  <text x="4" y="30" font-family="Georgia, 'Times New Roman', serif" font-size="27" font-weight="700" font-style="italic" fill="url(#logo-fill)" filter="url(#logo-shadow)">Rizz</text>
+  <text x="72" y="30" font-family="Inter, system-ui, sans-serif" font-size="22" font-weight="700" letter-spacing="-0.04em" fill="url(#logo-fill)" filter="url(#logo-shadow)">My Resume</text>
+</svg>

@@ -1,0 +1,54 @@
+# A string used to distinguish different Supabase projects on the same host.
+project_id = "rizzmyresume"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["http://localhost:3000/auth/callback", "http://localhost:3000/**"]
+jwt_expiry = 3600
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+[functions.generate]
+verify_jwt = true
+
+[functions.payment]
+verify_jwt = true
+
+[functions.history]
+verify_jwt = true
+
+[functions.download]
+verify_jwt = true
+
+[functions.generation-status]
+verify_jwt = true
+
+[functions.parse-resume]
+verify_jwt = true
+
+[functions.cleanup-resumes]
+verify_jwt = false
