@@ -14,8 +14,25 @@ export const SITE = {
 } as const;
 
 export function getAppUrl(): string {
+  if (typeof window !== "undefined") {
+    const origin = window.location.origin.replace(/\/$/, "");
+    if (!isLocalOrigin(origin)) {
+      return origin;
+    }
+  }
+
   const configured = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "");
-  if (configured) return configured;
-  if (process.env.NODE_ENV === "production") return PRODUCTION_APP_URL;
-  return "http://localhost:3000";
+  if (configured && !isLocalOrigin(configured)) {
+    return configured;
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    return PRODUCTION_APP_URL;
+  }
+
+  return configured || "http://localhost:3000";
+}
+
+function isLocalOrigin(url: string): boolean {
+  return /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(url);
 }

@@ -6,17 +6,22 @@ Magic link is the default Supabase flow. Optional one-time template tweak:
 2. Ensure the template uses `{{ .ConfirmationURL }}` (the default)
 3. Or paste the body from [`supabase/templates/magic_link.html`](./templates/magic_link.html)
 
-Already configured via CLI:
+Already configured via CLI for **local dev**:
 
 - **Confirm email** — disabled (sign-in link only, no separate confirmation step)
 - **Redirect URL** — `http://localhost:3000/auth/callback` allowed
 
-## Flow
+## Production (required for magic links)
 
-1. User enters email at `/login`
-2. Supabase sends email with magic link
-3. User clicks link → `/auth/callback` → redirected to `/generate`
+In [Supabase Dashboard → Authentication → URL Configuration](https://supabase.com/dashboard/project/jjvmrfgffordqwzdzznt/auth/url-configuration):
 
-For production, add your production URL to **Authentication → URL Configuration → Redirect URLs**, e.g. `https://rizzmyresume.sarwagyna.com/auth/callback`.
+| Setting | Value |
+|---|---|
+| **Site URL** | `https://rizzmyresume.sarwagyna.com` |
+| **Redirect URLs** | `https://rizzmyresume.sarwagyna.com/auth/callback` |
+| | `https://rizzmyresume.sarwagyna.com/**` |
 
-Set **Site URL** to `https://rizzmyresume.sarwagyna.com` in the same screen.
+If Site URL is still `http://localhost:3000`, magic links in emails will redirect to localhost even when users sign in from production.
+
+Also set in **Vercel**:
+`NEXT_PUBLIC_APP_URL=https://rizzmyresume.sarwagyna.com` and redeploy.
