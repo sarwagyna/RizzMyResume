@@ -3,20 +3,32 @@
 import { UseFormReturn } from "react-hook-form";
 import { TextInput } from "@/components/shared/TextInput";
 import { TextArea } from "@/components/shared/TextArea";
-import { isFieldMissing, MISSING_LABEL } from "@/lib/missingFields";
+import { getFieldHighlight } from "@/lib/fieldHighlight";
 import type { ResumeFormValues } from "@/lib/validators/resumeInput";
 
 interface Props {
   form: UseFormReturn<ResumeFormValues>;
   missingPaths?: string[];
+  atsHints?: Record<string, string>;
 }
 
-export function JDInput({ form, missingPaths = [] }: Props) {
+export function JDInput({
+  form,
+  missingPaths = [],
+  atsHints = {},
+}: Props) {
   const {
     register,
     watch,
     formState: { errors },
   } = form;
+
+  const targetRoleHighlight = getFieldHighlight(
+    "targetRole",
+    missingPaths,
+    atsHints
+  );
+  const jdTextHighlight = getFieldHighlight("jdText", missingPaths, atsHints);
 
   return (
     <div className="space-y-4">
@@ -26,8 +38,8 @@ export function JDInput({ form, missingPaths = [] }: Props) {
         placeholder="Software Engineer Intern, Data Analyst, etc."
         {...register("targetRole")}
         error={errors.targetRole?.message}
-        missing={isFieldMissing("targetRole", missingPaths)}
-        missingMessage={MISSING_LABEL}
+        missing={targetRoleHighlight.highlight}
+        missingMessage={targetRoleHighlight.message}
       />
       <TextArea
         label="Job description (optional)"
@@ -37,6 +49,8 @@ export function JDInput({ form, missingPaths = [] }: Props) {
         value={watch("jdText")}
         {...register("jdText")}
         error={errors.jdText?.message}
+        missing={jdTextHighlight.highlight}
+        missingMessage={jdTextHighlight.message}
       />
     </div>
   );

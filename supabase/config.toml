@@ -53,8 +53,17 @@ verify_jwt = true
 [functions.generation-status]
 verify_jwt = true
 
+[functions.preview]
+verify_jwt = true
+
+[functions.process-generation]
+verify_jwt = true
+
 [functions.parse-resume]
 verify_jwt = true
 
 [functions.cleanup-resumes]
 verify_jwt = false
+
+[functions.referral]
+verify_jwt = true

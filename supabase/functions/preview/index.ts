@@ -5,8 +5,8 @@ import {
   errorResponse,
   getAuthUser,
   isGenerationStale,
+  isProcessingStale,
 } from "../_shared/utils.ts";
-import { runResumeGeneration } from "../_shared/generationPipeline.ts";
 
 function getServiceClient() {
   return createClient(
@@ -20,7 +20,7 @@ const rateLimitMap = new Map<string, number[]>();
 function checkRateLimit(userId: string): boolean {
   const now = Date.now();
   const windowMs = 60_000;
-  const maxCalls = 5;
+  const maxCalls = 10;
   const timestamps = (rateLimitMap.get(userId) || []).filter(
     (t) => now - t < windowMs
   );
@@ -57,46 +57,24 @@ function completedPreviewResponse(
   });
 }
 
-async function regeneratePreview(
+function processingPreviewResponse(generationId: string) {
+  return jsonResponse({
+    generation_id: generationId,
+    status: "processing",
+    is_paid: false,
+  });
+}
+
+async function enqueuePreviewGeneration(
   supabase: ReturnType<typeof getServiceClient>,
-  userId: string,
-  inputId: string,
   generationId: string
 ) {
   await supabase
     .from("generations")
-    .update({ status: "processing" })
+    .update({ status: "processing", completed_at: null })
     .eq("id", generationId);
 
-  try {
-    const result = await runResumeGeneration(
-      supabase,
-      userId,
-      inputId,
-      generationId
-    );
-
-    return jsonResponse({
-      generation_id: result.generation_id,
-      status: result.status,
-      expires_at: result.expires_at,
-      ats_score: result.ats_score,
-      ats_tips: result.ats_tips,
-      what_changed: result.what_changed,
-      jd_keywords_matched: result.jd_keywords_matched,
-      jd_keywords_missed: result.jd_keywords_missed,
-      is_paid: false,
-      regenerated: true,
-    });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Preview failed";
-    await supabase
-      .from("generations")
-      .update({ status: "failed" })
-      .eq("id", generationId);
-
-    return errorResponse(message, 500);
-  }
+  return processingPreviewResponse(generationId);
 }
 
 Deno.serve(async (req) => {
@@ -113,7 +91,7 @@ Deno.serve(async (req) => {
     return errorResponse("Rate limit exceeded. Try again in a minute.", 429);
   }
 
-  const { input_id } = await req.json();
+  const { input_id, force_regenerate } = await req.json();
   if (!input_id) return errorResponse("input_id required");
 
   const supabase = getServiceClient();
@@ -130,7 +108,7 @@ Deno.serve(async (req) => {
   const { data: existing } = await supabase
     .from("generations")
     .select(
-      "id, status, pdf_signed_url, pdf_url_expires_at, ats_score, what_changed, jd_keywords_matched, jd_keywords_missed, ats_tips, payment_id, completed_at"
+      "id, status, pdf_signed_url, pdf_url_expires_at, ats_score, what_changed, jd_keywords_matched, jd_keywords_missed, ats_tips, payment_id, created_at, completed_at"
     )
     .eq("input_id", input_id)
     .eq("user_id", user.id)
@@ -140,20 +118,34 @@ Deno.serve(async (req) => {
     .maybeSingle();
 
   if (existing?.status === "completed") {
-    const stale = isGenerationStale(input.updated_at, existing.completed_at);
+    const stale =
+      force_regenerate === true ||
+      isGenerationStale(input.updated_at, existing.completed_at);
 
     if (!stale) {
       return completedPreviewResponse(existing);
     }
 
-    return regeneratePreview(supabase, user.id, input_id, existing.id);
+    return enqueuePreviewGeneration(supabase, existing.id);
   }
 
   if (existing?.status === "processing") {
-    return jsonResponse({
-      generation_id: existing.id,
-      status: "processing",
-    });
+    if (
+      force_regenerate === true ||
+      isProcessingStale(
+        existing.created_at,
+        existing.completed_at,
+        existing.status
+      )
+    ) {
+      return enqueuePreviewGeneration(supabase, existing.id);
+    }
+
+    return processingPreviewResponse(existing.id);
+  }
+
+  if (existing?.status === "failed") {
+    return enqueuePreviewGeneration(supabase, existing.id);
   }
 
   const { data: generation, error: genError } = await supabase
@@ -169,5 +161,5 @@ Deno.serve(async (req) => {
 
   if (genError) return errorResponse(genError.message, 500);
 
-  return regeneratePreview(supabase, user.id, input_id, generation.id);
+  return enqueuePreviewGeneration(supabase, generation.id);
 });

@@ -2,9 +2,17 @@ export interface EducationEntry {
   institution: string;
   degree: string;
   field?: string;
-  startYear: string;
+  city: string;
+  startYear?: string;
   endYear: string;
+  endMonth: string;
   cgpa?: string;
+}
+
+export interface LanguageEntry {
+  language: string;
+  level: string;
+  label: string;
 }
 
 export interface ProjectEntry {
@@ -19,16 +27,18 @@ export interface ProjectEntry {
 export interface ExperienceEntry {
   company: string;
   role: string;
+  location?: string;
   startDate: string;
   endDate: string;
-  description: string;
+  bullets: string[];
+  description?: string;
 }
 
 export interface CertificationEntry {
   name: string;
   issuer: string;
-  date: string;
-  credential: string;
+  date?: string;
+  credential?: string;
 }
 
 export interface ResumeFormData {
@@ -39,10 +49,11 @@ export interface ResumeFormData {
   githubUrl: string;
   city: string;
   state: string;
+  summary?: string;
   education: EducationEntry[];
   skills: string[];
   softSkills: string[];
-  languages: string[];
+  languageEntries: LanguageEntry[];
   interests: string[];
   projects: ProjectEntry[];
   experience: ExperienceEntry[];
@@ -77,6 +88,43 @@ export interface PaymentOrderResponse {
   payment_id: string;
 }
 
+export interface CreditRedeemResponse {
+  redeemed: boolean;
+  payment_id: string;
+  credits_spent: number;
+  credits_remaining: number;
+}
+
+export interface ReferralStats {
+  referral_code: string;
+  credits: number;
+  referral_count: number;
+  referred_by: string | null;
+  referral_link: string;
+  credits_per_referral: number;
+  credits_per_resume: number;
+  recent_referrals: {
+    id: string;
+    created_at: string;
+    email: string | null;
+    full_name: string | null;
+  }[];
+  transactions: {
+    id: string;
+    amount: number;
+    balance_after: number;
+    type: string;
+    description: string | null;
+    created_at: string;
+  }[];
+}
+
+export interface ReferralApplyResponse {
+  applied: boolean;
+  credits_earned: number;
+  credits: number;
+}
+
 export interface ClaudeGenerationOutput {
   latex_code: string;
   what_changed: string;
@@ -109,7 +157,7 @@ export const FORM_STEPS: FormStep[] = [
 export const FORM_STEP_LABELS: Record<FormStep, string> = {
   personal: "Personal",
   education: "Education",
-  skills: "Skills & interests",
+  skills: "Skills & languages",
   projects: "Projects",
   experience: "Experience",
   certifications: "Certifications",

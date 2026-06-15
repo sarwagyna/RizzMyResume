@@ -2,23 +2,43 @@
 
 import { UseFormReturn } from "react-hook-form";
 import { TagListField } from "@/components/form/TagListField";
-import { isFieldMissing, MISSING_LABEL } from "@/lib/missingFields";
+import { LanguageEntriesForm } from "@/components/form/LanguageEntriesForm";
+import { AtsStepCallout } from "@/components/form/AtsStepCallout";
+import { getFieldHighlight } from "@/lib/fieldHighlight";
+import { isProfessionalTemplate } from "@/lib/templateFormRules";
+import type { ResumeTemplateId } from "@/lib/templates";
+import type { AtsStepHint } from "@/lib/atsFieldHints";
 import type { ResumeFormValues } from "@/lib/validators/resumeInput";
 
 interface Props {
   form: UseFormReturn<ResumeFormValues>;
   missingPaths?: string[];
+  atsHints?: Record<string, string>;
+  atsStepHint?: AtsStepHint;
+  templateId?: ResumeTemplateId;
 }
 
-export function SkillsForm({ form, missingPaths = [] }: Props) {
+export function SkillsForm({
+  form,
+  missingPaths = [],
+  atsHints = {},
+  atsStepHint,
+  templateId = "template-001",
+}: Props) {
   const skills = form.watch("skills");
   const softSkills = form.watch("softSkills");
-  const languages = form.watch("languages");
   const interests = form.watch("interests");
   const { errors } = form.formState;
+  const professional = isProfessionalTemplate(templateId);
+  const highlight = (path: string) =>
+    getFieldHighlight(path, missingPaths, atsHints);
+  const skillsHighlight = highlight("skills");
+  const softSkillsHighlight = highlight("softSkills");
+  const interestsHighlight = highlight("interests");
 
   return (
     <div className="space-y-8">
+      <AtsStepCallout hint={atsStepHint} />
       <TagListField
         label="Technical skills"
         placeholder="React, Python, SQL..."
@@ -27,42 +47,36 @@ export function SkillsForm({ form, missingPaths = [] }: Props) {
           form.setValue("skills", values, { shouldValidate: true })
         }
         error={errors.skills?.message as string | undefined}
-        missing={isFieldMissing("skills", missingPaths)}
-        missingMessage={MISSING_LABEL}
+        missing={skillsHighlight.highlight}
+        missingMessage={skillsHighlight.message}
       />
-      <TagListField
-        label="Soft skills (optional)"
-        placeholder="Communication, teamwork, problem-solving..."
-        values={softSkills}
-        onChange={(values) =>
-          form.setValue("softSkills", values, { shouldValidate: true })
-        }
-        error={errors.softSkills?.message as string | undefined}
-        missing={isFieldMissing("softSkills", missingPaths)}
-        missingMessage={MISSING_LABEL}
-      />
-      <TagListField
-        label="Languages (optional)"
-        placeholder="English (Fluent), Hindi (Native)..."
-        values={languages}
-        onChange={(values) =>
-          form.setValue("languages", values, { shouldValidate: true })
-        }
-        error={errors.languages?.message as string | undefined}
-        missing={isFieldMissing("languages", missingPaths)}
-        missingMessage={MISSING_LABEL}
-      />
-      <TagListField
-        label="Interests (optional)"
-        placeholder="Open source, hackathons, cricket..."
-        values={interests}
-        onChange={(values) =>
-          form.setValue("interests", values, { shouldValidate: true })
-        }
-        error={errors.interests?.message as string | undefined}
-        missing={isFieldMissing("interests", missingPaths)}
-        missingMessage={MISSING_LABEL}
-      />
+      {!professional && (
+        <TagListField
+          label="Soft skills (optional)"
+          placeholder="Communication, teamwork, problem-solving..."
+          values={softSkills}
+          onChange={(values) =>
+            form.setValue("softSkills", values, { shouldValidate: true })
+          }
+          error={errors.softSkills?.message as string | undefined}
+          missing={softSkillsHighlight.highlight}
+          missingMessage={softSkillsHighlight.message}
+        />
+      )}
+      <LanguageEntriesForm form={form} required={professional} />
+      {!professional && (
+        <TagListField
+          label="Interests (optional)"
+          placeholder="Open source, hackathons, cricket..."
+          values={interests}
+          onChange={(values) =>
+            form.setValue("interests", values, { shouldValidate: true })
+          }
+          error={errors.interests?.message as string | undefined}
+          missing={interestsHighlight.highlight}
+          missingMessage={interestsHighlight.message}
+        />
+      )}
     </div>
   );
 }

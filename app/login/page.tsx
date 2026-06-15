@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getAuthCallbackUrl } from "@/lib/auth";
+import { setReferralCookie, normalizeReferralCode } from "@/lib/referrals";
 import { Button } from "@/components/shared/Button";
 import { Card } from "@/components/shared/Card";
 import { TextInput } from "@/components/shared/TextInput";
@@ -15,6 +16,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/generate";
+  const referralCode = searchParams.get("ref");
   const urlError = searchParams.get("error");
 
   const [email, setEmail] = useState("");
@@ -26,6 +28,11 @@ function LoginForm() {
   useEffect(() => {
     if (urlError) setError(urlError);
   }, [urlError]);
+
+  useEffect(() => {
+    if (!referralCode) return;
+    setReferralCookie(referralCode);
+  }, [referralCode]);
 
   useEffect(() => {
     let active = true;
@@ -121,6 +128,15 @@ function LoginForm() {
             Enter your email and we&apos;ll send a magic link. No password
             needed.
           </p>
+          {referralCode && (
+            <p className="mt-3 rounded-md bg-success/10 px-3 py-2 text-sm text-success">
+              Referral code{" "}
+              <span className="font-semibold">
+                {normalizeReferralCode(referralCode)}
+              </span>{" "}
+              applied — you&apos;ll earn 10 credits after sign-up.
+            </p>
+          )}
         </div>
 
         <form onSubmit={sendMagicLink} className="space-y-4">

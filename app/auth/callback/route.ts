@@ -1,7 +1,33 @@
 import { createServerClient } from "@supabase/ssr";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
+import { REFERRAL_COOKIE } from "@/lib/referrals";
 
 export const dynamic = "force-dynamic";
+
+async function applyPendingReferral(
+  userId: string,
+  referralCode: string | undefined,
+  response: NextResponse
+) {
+  if (!referralCode) return;
+
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!serviceRoleKey || !supabaseUrl) return;
+
+  const admin = createAdminClient(supabaseUrl, serviceRoleKey);
+  await admin.rpc("process_referral", {
+    p_referred_user_id: userId,
+    p_referral_code: referralCode,
+  });
+
+  response.cookies.set(REFERRAL_COOKIE, "", {
+    path: "/",
+    maxAge: 0,
+    sameSite: "lax",
+  });
+}
 
 export async function GET(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -61,19 +87,23 @@ export async function GET(request: NextRequest) {
     }
   );
 
+  const referralCode = request.cookies.get(REFERRAL_COOKIE)?.value;
+
   if (code) {
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error && data.user?.id) {
+      await applyPendingReferral(data.user.id, referralCode, response);
       return response;
     }
   }
 
   if (tokenHash && type) {
-    const { error } = await supabase.auth.verifyOtp({
+    const { data, error } = await supabase.auth.verifyOtp({
       token_hash: tokenHash,
       type: type as "email" | "signup" | "magiclink" | "recovery" | "invite",
     });
-    if (!error) {
+    if (!error && data.user?.id) {
+      await applyPendingReferral(data.user.id, referralCode, response);
       return response;
     }
   }

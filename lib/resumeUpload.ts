@@ -1,3 +1,4 @@
+import { hydrateFormValues } from "@/lib/hydrateFormValues";
 import {
   defaultFormValues,
   type ResumeFormValues,
@@ -18,8 +19,10 @@ export function mergeParsedResume(
           institution: e.institution ?? "",
           degree: e.degree ?? "",
           field: e.field ?? "",
+          city: e.city ?? "",
           startYear: e.startYear ?? "",
           endYear: e.endYear ?? "",
+          endMonth: e.endMonth ?? "",
           cgpa: e.cgpa ?? "",
         }))
       : defaultFormValues.education;
@@ -38,7 +41,7 @@ export function mergeParsedResume(
         }))
       : defaultFormValues.projects;
 
-  return {
+  return hydrateFormValues({
     fullName: parsed.fullName?.trim() ?? "",
     email: parsed.email?.trim() ?? "",
     phone: normalizePhone(parsed.phone ?? ""),
@@ -46,17 +49,20 @@ export function mergeParsedResume(
     githubUrl: parsed.githubUrl?.trim() ?? "",
     city: parsed.city?.trim() ?? "",
     state: parsed.state?.trim() ?? "",
+    summary: parsed.summary?.trim() ?? "",
     education,
     skills: (parsed.skills ?? []).filter(Boolean).map((s) => s.trim()),
     softSkills: (parsed.softSkills ?? []).filter(Boolean).map((s) => s.trim()),
-    languages: (parsed.languages ?? []).filter(Boolean).map((s) => s.trim()),
+    languageEntries: parsed.languageEntries,
     interests: (parsed.interests ?? []).filter(Boolean).map((s) => s.trim()),
     projects: normalizedProjects,
     experience: (parsed.experience ?? []).map((e) => ({
       company: e.company ?? "",
       role: e.role ?? "",
+      location: e.location ?? "",
       startDate: e.startDate ?? "",
       endDate: e.endDate ?? "",
+      bullets: e.bullets ?? [],
       description: e.description ?? "",
     })),
     certifications: (parsed.certifications ?? []).map((c) => ({
@@ -67,7 +73,10 @@ export function mergeParsedResume(
     })),
     targetRole: parsed.targetRole?.trim() ?? "",
     jdText: parsed.jdText?.trim() ?? "",
-  };
+    ...(Array.isArray((parsed as { languages?: string[] }).languages)
+      ? { languages: (parsed as { languages: string[] }).languages }
+      : {}),
+  } as Partial<ResumeFormValues> & { languages?: string[] });
 }
 
 function normalizePhone(phone: string): string {

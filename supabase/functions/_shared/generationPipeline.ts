@@ -3,12 +3,13 @@ import {
   generateResumeContent,
   formatRawInput,
 } from "./claude.ts";
+import { scoreGeneratedResume } from "./atsScoring.ts";
 import {
-  buildLatexDocument,
   compileLatex,
-  normalizeLatexDocument,
+  prepareResumeForCompile,
   pdfFilename,
 } from "./latexlite.ts";
+import { resolveTemplateId } from "./templates/index.ts";
 
 const SIGNED_URL_EXPIRY = 86400;
 
@@ -30,6 +31,13 @@ export async function runResumeGeneration(
   inputId: string,
   generationId: string
 ): Promise<GenerationOutput> {
+  if (!Deno.env.get("ANTHROPIC_API_KEY")) {
+    throw new Error("ANTHROPIC_API_KEY is not configured on the server");
+  }
+  if (!Deno.env.get("LATEXLITE_API_KEY")) {
+    throw new Error("LATEXLITE_API_KEY is not configured on the server");
+  }
+
   const { data: input, error: inputError } = await supabase
     .from("resume_inputs")
     .select("*")
@@ -42,24 +50,35 @@ export async function runResumeGeneration(
   }
 
   const rawInput = formatRawInput(input);
+  const templateId = resolveTemplateId(input.template_id as string | undefined);
   const claudeOutput = await generateResumeContent(
     rawInput,
     input.jd_text || "",
-    input.target_role || undefined
+    input.target_role || undefined,
+    templateId
   );
 
-  const rawLatex = claudeOutput.latex_code.includes("\\documentclass")
-    ? claudeOutput.latex_code
-    : buildLatexDocument(
-        claudeOutput.latex_body || claudeOutput.latex_code,
-        input.full_name || "Candidate",
-        input.email || "",
-        input.phone || ""
-      );
+  const sourceLatex = claudeOutput.latex_body || claudeOutput.latex_code;
+  const contact = {
+    fullName: input.full_name || "Candidate",
+    email: input.email || "",
+    phone: input.phone || "",
+    city: input.city || "",
+    state: input.state || "",
+  };
 
-  const latexCode = normalizeLatexDocument(rawLatex);
+  const latexCode = prepareResumeForCompile(sourceLatex, templateId, contact);
 
-  const pdfBytes = await compileLatex(latexCode);
+  const finalAts = scoreGeneratedResume(latexCode, input.jd_text || "");
+  claudeOutput.ats_score = finalAts.score;
+  claudeOutput.jd_keywords_matched = finalAts.matched;
+  claudeOutput.jd_keywords_missed = finalAts.missed;
+  claudeOutput.ats_tips = finalAts.tips;
+
+  const pdfBytes = await compileLatex(latexCode, 0, templateId, {
+    sourceLatex,
+    contact,
+  });
 
   const filename = pdfFilename(input.full_name || "resume");
   const storagePath = `${userId}/resumes/${generationId}/${filename}`;
@@ -120,6 +139,30 @@ export async function runResumeGeneration(
     jd_keywords_matched: claudeOutput.jd_keywords_matched,
     jd_keywords_missed: claudeOutput.jd_keywords_missed,
   };
+}
+
+/** Background-safe wrapper — marks generation failed on error. */
+export async function runGenerationSafe(
+  supabase: SupabaseClient,
+  userId: string,
+  inputId: string,
+  generationId: string
+): Promise<void> {
+  console.log(`runGenerationSafe: start ${generationId}`);
+  try {
+    await runResumeGeneration(supabase, userId, inputId, generationId);
+    console.log(`runGenerationSafe: completed ${generationId}`);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown generation error";
+    console.error(`Generation ${generationId} failed:`, err);
+    await supabase
+      .from("generations")
+      .update({
+        status: "failed",
+        what_changed: `Generation failed: ${message}`,
+      })
+      .eq("id", generationId);
+  }
 }
 
 export async function unlockGeneration(

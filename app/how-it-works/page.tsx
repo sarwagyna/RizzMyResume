@@ -31,7 +31,7 @@ const PIPELINE_STEPS = [
   {
     title: "AI writes your resume",
     description:
-      "Claude Haiku tailors bullets to your JD, picks the strongest projects, and outputs a one-page Harshibar-style LaTeX resume in Times New Roman — optimised for ATS parsers.",
+      "Claude Haiku tailors bullets to your JD, picks the strongest projects, and outputs a one-page Template 001 LaTeX resume in Times New Roman — optimised for ATS parsers.",
   },
   {
     title: "LaTeX compiles to PDF",

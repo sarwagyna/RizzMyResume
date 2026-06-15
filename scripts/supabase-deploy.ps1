@@ -6,6 +6,7 @@ $ProjectRef = "jjvmrfgffordqwzdzznt"
 
 $Functions = @(
   "preview",
+  "process-generation",
   "generate",
   "generation-status",
   "preview-pdf",

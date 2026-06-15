@@ -129,6 +129,7 @@ function ResultContent() {
         tips={data.ats_tips}
         matched={data.jd_keywords_matched}
         missed={data.jd_keywords_missed}
+        subtitle="Score for your AI-optimized resume after ATS fixes were applied."
       />
       <WhatChanged content={data.what_changed} />
       <JDKeywords

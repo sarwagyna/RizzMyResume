@@ -3,15 +3,20 @@
 import { UseFormReturn, useFieldArray } from "react-hook-form";
 import { Button } from "@/components/shared/Button";
 import { TextInput } from "@/components/shared/TextInput";
-import { isFieldMissing, MISSING_LABEL } from "@/lib/missingFields";
+import { getFieldHighlight } from "@/lib/fieldHighlight";
 import type { ResumeFormValues } from "@/lib/validators/resumeInput";
 
 interface Props {
   form: UseFormReturn<ResumeFormValues>;
   missingPaths?: string[];
+  atsHints?: Record<string, string>;
 }
 
-export function CertificationsForm({ form, missingPaths = [] }: Props) {
+export function CertificationsForm({
+  form,
+  missingPaths = [],
+  atsHints = {},
+}: Props) {
   const {
     register,
     control,
@@ -23,7 +28,8 @@ export function CertificationsForm({ form, missingPaths = [] }: Props) {
     name: "certifications",
   });
 
-  const missing = (path: string) => isFieldMissing(path, missingPaths);
+  const highlight = (path: string) =>
+    getFieldHighlight(path, missingPaths, atsHints);
 
   return (
     <div className="space-y-6">
@@ -55,34 +61,32 @@ export function CertificationsForm({ form, missingPaths = [] }: Props) {
             required
             {...register(`certifications.${index}.name`)}
             error={errors.certifications?.[index]?.name?.message}
-            missing={missing(`certifications.${index}.name`)}
-            missingMessage={MISSING_LABEL}
+            missing={highlight(`certifications.${index}.name`).highlight}
+            missingMessage={highlight(`certifications.${index}.name`).message}
           />
           <TextInput
             label="Issuer"
             required
             {...register(`certifications.${index}.issuer`)}
             error={errors.certifications?.[index]?.issuer?.message}
-            missing={missing(`certifications.${index}.issuer`)}
-            missingMessage={MISSING_LABEL}
+            missing={highlight(`certifications.${index}.issuer`).highlight}
+            missingMessage={highlight(`certifications.${index}.issuer`).message}
           />
           <TextInput
-            label="Date"
-            required
+            label="Date (optional)"
             placeholder="Mar 2024"
             {...register(`certifications.${index}.date`)}
             error={errors.certifications?.[index]?.date?.message}
-            missing={missing(`certifications.${index}.date`)}
-            missingMessage={MISSING_LABEL}
+            missing={highlight(`certifications.${index}.date`).highlight}
+            missingMessage={highlight(`certifications.${index}.date`).message}
           />
           <TextInput
-            label="Credential ID or URL"
-            required
+            label="Credential ID or URL (optional)"
             placeholder="ABC123 or https://credly.com/badges/..."
             {...register(`certifications.${index}.credential`)}
             error={errors.certifications?.[index]?.credential?.message}
-            missing={missing(`certifications.${index}.credential`)}
-            missingMessage={MISSING_LABEL}
+            missing={highlight(`certifications.${index}.credential`).highlight}
+            missingMessage={highlight(`certifications.${index}.credential`).message}
           />
         </div>
       ))}

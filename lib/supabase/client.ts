@@ -39,18 +39,57 @@ export async function invokeFunction<T>(
   const method = options?.method ?? "POST";
   const url = `${env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/${name}`;
 
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${session?.access_token ?? env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+  };
+
+  if (method !== "GET") {
+    headers["Content-Type"] = "application/json";
+  }
+
   const response = await fetch(url, {
     method,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${session?.access_token ?? env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
-    },
+    headers,
     body: method !== "GET" && body ? JSON.stringify(body) : undefined,
   });
 
-  const data = await response.json();
+  let data: { error?: string; message?: string } = {};
+  try {
+    data = await response.json();
+  } catch {
+    // Non-JSON body (e.g. platform error pages).
+  }
+
   if (!response.ok) {
-    throw new Error(data.error || "Request failed");
+    if (response.status === 546) {
+      throw new Error(
+        "Resume generation is still running. Please wait a moment and try again."
+      );
+    }
+    throw new Error(
+      data.error || data.message || `Request failed (${response.status})`
+    );
   }
   return data as T;
+}
+
+/** Runs AI + PDF generation. May take 1–2 minutes. */
+export async function runGenerationWorker(
+  generationId: string,
+  inputId: string
+): Promise<{ generation_id: string; status: string }> {
+  return invokeFunction("process-generation", {
+    generation_id: generationId,
+    input_id: inputId,
+  });
+}
+
+/** Non-blocking — starts generation; poll generation-status for completion. */
+export function triggerGenerationWorker(
+  generationId: string,
+  inputId: string
+): void {
+  void runGenerationWorker(generationId, inputId).catch((err) => {
+    console.warn("Generation worker:", err);
+  });
 }

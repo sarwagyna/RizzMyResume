@@ -12,6 +12,7 @@ import {
 } from "../_shared/razorpay.ts";
 
 const AMOUNT_PAISE = 5000;
+const CREDITS_PER_RESUME = 50;
 
 function getServiceClient() {
   return createClient(
@@ -106,6 +107,104 @@ Deno.serve(async (req) => {
       currency: "INR",
       key: razorpayKeyId,
       payment_id: payment.id,
+    });
+  }
+
+  if (action === "redeem" && req.method === "POST") {
+    const { input_id, generation_id } = await req.json();
+    if (!input_id) return errorResponse("input_id required");
+
+    const { data: input, error: inputError } = await supabase
+      .from("resume_inputs")
+      .select("id")
+      .eq("id", input_id)
+      .eq("user_id", user.id)
+      .single();
+
+    if (inputError || !input) return errorResponse("Input not found", 404);
+
+    if (generation_id) {
+      const { data: generation, error: genError } = await supabase
+        .from("generations")
+        .select("id, input_id, payment_id, status")
+        .eq("id", generation_id)
+        .eq("user_id", user.id)
+        .single();
+
+      if (genError || !generation) {
+        return errorResponse("Generation not found", 404);
+      }
+
+      if (generation.input_id !== input_id) {
+        return errorResponse("Generation does not match this resume", 400);
+      }
+
+      if (generation.payment_id) {
+        return errorResponse("This resume is already paid", 400);
+      }
+
+      if (generation.status !== "completed") {
+        return errorResponse("Preview is not ready for payment yet", 400);
+      }
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("credits")
+      .eq("id", user.id)
+      .single();
+
+    if (profileError || !profile) {
+      return errorResponse("Profile not found", 404);
+    }
+
+    if ((profile.credits ?? 0) < CREDITS_PER_RESUME) {
+      return errorResponse(
+        `You need ${CREDITS_PER_RESUME} credits to unlock a free resume`,
+        402
+      );
+    }
+
+    const { data: payment, error: payError } = await supabase
+      .from("payments")
+      .insert({
+        user_id: user.id,
+        input_id,
+        amount_paise: 0,
+        status: "verified",
+        source: "credits",
+      })
+      .select("id")
+      .single();
+
+    if (payError || !payment) {
+      return errorResponse(payError?.message || "Payment record failed", 500);
+    }
+
+    const { error: deductError } = await supabase.rpc("deduct_credits", {
+      p_user_id: user.id,
+      p_amount: CREDITS_PER_RESUME,
+      p_type: "redemption",
+      p_reference_id: payment.id,
+      p_description: "Redeemed credits for free resume download",
+    });
+
+    if (deductError) {
+      await supabase.from("payments").delete().eq("id", payment.id);
+      return errorResponse(deductError.message, 500);
+    }
+
+    const { data: updatedProfile } = await supabase
+      .from("profiles")
+      .select("credits")
+      .eq("id", user.id)
+      .single();
+
+    return jsonResponse({
+      redeemed: true,
+      payment_id: payment.id,
+      credits_spent: CREDITS_PER_RESUME,
+      credits_remaining: updatedProfile?.credits ?? 0,
     });
   }
 

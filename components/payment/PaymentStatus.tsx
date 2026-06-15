@@ -6,11 +6,14 @@ import { useSearchParams } from "next/navigation";
 import { Card } from "@/components/shared/Card";
 import { QualityWarnings } from "@/components/form/QualityWarnings";
 import { RazorpayButton } from "@/components/payment/RazorpayButton";
+import { CreditRedeemButton } from "@/components/payment/CreditRedeemButton";
 import { ResumePreviewViewer } from "@/components/preview/ResumePreviewViewer";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { useFormStore } from "@/stores/formStore";
 import { invokeFunction, createClient } from "@/lib/supabase/client";
 import { PageContainer } from "@/components/shared/PageContainer";
+import { CREDITS_PER_FREE_RESUME } from "@/lib/referrals";
+import { fetchReferralStats } from "@/lib/referralStats";
 
 interface GenerationStatus {
   generation_id: string;
@@ -41,6 +44,7 @@ function PaymentStatusContent() {
 
   const [hydrating, setHydrating] = useState(Boolean(generationIdParam));
   const [hydrateError, setHydrateError] = useState<string | null>(null);
+  const [credits, setCredits] = useState(0);
   const [contact, setContact] = useState<PaymentContact>({
     fullName: formData.fullName,
     email: formData.email,
@@ -86,6 +90,22 @@ function PaymentStatusContent() {
       targetRole: formData.targetRole,
     });
   }, [formData.fullName, formData.email, formData.phone, formData.targetRole]);
+
+  useEffect(() => {
+    let active = true;
+
+    fetchReferralStats()
+      .then((stats) => {
+        if (active) setCredits(stats.credits);
+      })
+      .catch(() => {
+        // Credits are optional on the payment page.
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!generationIdParam) {
@@ -202,8 +222,9 @@ function PaymentStatusContent() {
       <div>
         <h1 className="display-md mb-2">Unlock your resume</h1>
         <p className="text-muted">
-          Pay ₹50 once to download your ATS-optimised PDF and receive it by
-          email.
+          {credits >= CREDITS_PER_FREE_RESUME
+            ? `You have ${credits} credits — use 50 for a free download, or pay ₹50.`
+            : "Pay ₹50 once to download your ATS-optimised PDF and receive it by email."}
         </p>
       </div>
 
@@ -225,11 +246,31 @@ function PaymentStatusContent() {
           </div>
           <div className="flex justify-between border-t border-hairline pt-2">
             <span className="font-semibold text-ink">Total</span>
-            <span className="font-semibold text-ink">₹50</span>
+            <span className="font-semibold text-ink">
+              {credits >= CREDITS_PER_FREE_RESUME ? "₹0 with credits" : "₹50"}
+            </span>
           </div>
         </div>
 
         <QualityWarnings data={formData} />
+
+        <CreditRedeemButton
+          inputId={inputId}
+          generationId={resolvedGenerationId}
+          credits={credits}
+          onRedeemed={setCredits}
+        />
+
+        {credits >= CREDITS_PER_FREE_RESUME ? (
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-hairline" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-canvas px-2 text-muted">or pay ₹50</span>
+            </div>
+          </div>
+        ) : null}
 
         <RazorpayButton
           inputId={inputId}
@@ -241,6 +282,16 @@ function PaymentStatusContent() {
 
         <p className="text-center text-xs text-muted-soft">
           UPI, cards, and net banking accepted via Razorpay.
+          {credits > 0 && credits < CREDITS_PER_FREE_RESUME ? (
+            <>
+              {" "}
+              You have {credits} credits —{" "}
+              <Link href="/referrals" className="font-medium text-ink underline">
+                invite friends
+              </Link>{" "}
+              to earn more.
+            </>
+          ) : null}
         </p>
       </Card>
 

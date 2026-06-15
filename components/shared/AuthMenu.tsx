@@ -172,6 +172,14 @@ export function AuthMenu() {
               How it works
             </Link>
             <Link
+              href="/referrals"
+              role="menuitem"
+              className="block rounded-md px-3 py-2 text-sm text-ink hover:bg-surface-soft"
+              onClick={() => setMenuOpen(false)}
+            >
+              Referrals & credits
+            </Link>
+            <Link
               href="/dashboard"
               role="menuitem"
               className="block rounded-md px-3 py-2 text-sm text-ink hover:bg-surface-soft"

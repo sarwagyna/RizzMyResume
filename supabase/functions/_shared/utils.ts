@@ -38,6 +38,20 @@ export function isGenerationStale(
   );
 }
 
+const PROCESSING_STALE_MS = 3 * 60 * 1000;
+
+/** True when a generation has been processing too long (likely a crashed/timed-out worker). */
+export function isProcessingStale(
+  createdAt: string | null | undefined,
+  completedAt: string | null | undefined,
+  status: string | null | undefined
+): boolean {
+  if (status !== "processing") return false;
+  if (completedAt) return false;
+  if (!createdAt) return true;
+  return Date.now() - new Date(createdAt).getTime() > PROCESSING_STALE_MS;
+}
+
 export async function getAuthUser(req: Request) {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) return null;

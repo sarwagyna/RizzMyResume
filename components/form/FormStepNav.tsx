@@ -16,7 +16,9 @@ const SHORT_STEP_LABELS: Record<FormStep, string> = {
 interface FormStepNavProps {
   currentStep: FormStep;
   missingByStep: Partial<Record<FormStep, number>>;
+  atsByStep?: Partial<Record<FormStep, number>>;
   importedFromUpload: boolean;
+  improveFromAts?: boolean;
   onStepChange: (step: FormStep) => void;
   sticky?: boolean;
 }
@@ -24,7 +26,9 @@ interface FormStepNavProps {
 export function FormStepNav({
   currentStep,
   missingByStep,
+  atsByStep = {},
   importedFromUpload,
+  improveFromAts = false,
   onStepChange,
   sticky = true,
 }: FormStepNavProps) {
@@ -39,6 +43,7 @@ export function FormStepNav({
         <div className="flex w-max min-w-full gap-2 sm:w-auto sm:flex-wrap">
           {FORM_STEPS.map((step) => {
             const missingCount = missingByStep[step] ?? 0;
+            const atsCount = atsByStep[step] ?? 0;
             const isActive = step === currentStep;
 
             return (
@@ -60,6 +65,11 @@ export function FormStepNav({
                 {importedFromUpload && missingCount > 0 && (
                   <span className="rounded-full bg-warning px-1.5 py-0.5 text-[10px] font-semibold text-ink">
                     {missingCount}
+                  </span>
+                )}
+                {improveFromAts && atsCount > 0 && (
+                  <span className="rounded-full bg-error/15 px-1.5 py-0.5 text-[10px] font-semibold text-error">
+                    {atsCount}
                   </span>
                 )}
               </button>

@@ -56,5 +56,10 @@ Deno.serve(async (req) => {
     generation_id: gen.id,
     input_id: gen.input_id,
     is_paid: Boolean(gen.payment_id),
+    created_at: gen.created_at,
+    error_message:
+      gen.status === "failed" && gen.what_changed
+        ? gen.what_changed.replace(/^Generation failed:\s*/i, "")
+        : null,
   });
 });

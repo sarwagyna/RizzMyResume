@@ -1,14 +1,24 @@
 import { z } from "zod";
+import type { ResumeTemplateId } from "@/lib/templates";
+import { isProfessionalTemplate } from "@/lib/templateFormRules";
 
 const indianPhoneRegex = /^(\+91[\-\s]?)?[6-9]\d{9}$/;
+
+export const languageEntrySchema = z.object({
+  language: z.string().min(1, "Language is required"),
+  level: z.string().min(1, "Level is required"),
+  label: z.string().min(1, "Proficiency label is required"),
+});
 
 export const educationSchema = z.object({
   institution: z.string().min(2, "Institution is required"),
   degree: z.string().min(2, "Degree is required"),
   field: z.string().optional(),
-  startYear: z.string().min(4, "Start year required"),
-  endYear: z.string().min(4, "End year required"),
-  cgpa: z.string().min(1, "CGPA is required"),
+  city: z.string().min(2, "City is required"),
+  startYear: z.string().optional(),
+  endYear: z.string().min(4, "Graduation year required"),
+  endMonth: z.string().min(1, "Graduation month required"),
+  cgpa: z.string().optional(),
 });
 
 export const projectSchema = z.object({
@@ -25,16 +35,25 @@ export const projectSchema = z.object({
 export const experienceSchema = z.object({
   company: z.string().min(2, "Company name is required"),
   role: z.string().min(2, "Role is required"),
+  location: z.string().optional(),
   startDate: z.string().min(4, "Start date required"),
   endDate: z.string().min(2, "End date required"),
-  description: z.string().min(20, "Describe your work in at least 20 characters"),
+  bullets: z.array(z.string().min(10, "Each bullet needs at least 10 characters")),
+  description: z.string().optional(),
+});
+
+export const experienceProfessionalSchema = experienceSchema.extend({
+  location: z.string().min(2, "City/location is required"),
+  bullets: z
+    .array(z.string().min(10, "Each bullet needs at least 10 characters"))
+    .min(1, "Add at least one achievement bullet"),
 });
 
 export const certificationSchema = z.object({
   name: z.string().min(2, "Certification name is required"),
   issuer: z.string().min(2, "Issuer is required"),
-  date: z.string().min(4, "Date required"),
-  credential: z.string().min(2, "Credential ID or URL is required"),
+  date: z.string().optional(),
+  credential: z.string().optional(),
 });
 
 export const personalStepSchema = z.object({
@@ -47,6 +66,7 @@ export const personalStepSchema = z.object({
   githubUrl: z.string().url("Valid GitHub URL is required"),
   city: z.string().min(2, "City is required").max(50),
   state: z.string().min(2, "State is required").max(50),
+  summary: z.string().optional(),
 });
 
 export const educationStepSchema = z.object({
@@ -58,7 +78,7 @@ export const educationStepSchema = z.object({
 export const skillsStepSchema = z.object({
   skills: z.array(z.string().min(1)),
   softSkills: z.array(z.string().min(1)),
-  languages: z.array(z.string().min(1)),
+  languageEntries: z.array(languageEntrySchema),
   interests: z.array(z.string().min(1)),
 });
 
@@ -82,6 +102,73 @@ export const targetStepSchema = z.object({
   jdText: z.string().max(2000, "Job description max 2,000 characters"),
 });
 
+export function personalStepSchemaFor(templateId: ResumeTemplateId) {
+  if (!isProfessionalTemplate(templateId)) {
+    return personalStepSchema;
+  }
+  return personalStepSchema.extend({
+    summary: z
+      .string()
+      .min(50, "Professional summary must be at least 50 characters"),
+  });
+}
+
+export function skillsStepSchemaFor(templateId: ResumeTemplateId) {
+  if (!isProfessionalTemplate(templateId)) {
+    return skillsStepSchema;
+  }
+  return skillsStepSchema.extend({
+    languageEntries: z
+      .array(languageEntrySchema)
+      .min(1, "Add at least one language"),
+  });
+}
+
+export function experienceStepSchemaFor(templateId: ResumeTemplateId) {
+  if (!isProfessionalTemplate(templateId)) {
+    return experienceStepSchema;
+  }
+  return z.object({
+    experience: z.array(experienceProfessionalSchema),
+  });
+}
+
+export function educationStepSchemaFor(templateId: ResumeTemplateId) {
+  if (isProfessionalTemplate(templateId)) {
+    return educationStepSchema;
+  }
+  return z.object({
+    education: z
+      .array(
+        educationSchema.extend({
+          cgpa: z.string().min(1, "CGPA is required"),
+        })
+      )
+      .min(1, "Add at least one education entry"),
+  });
+}
+
+export function getStepSchema(step: string, templateId: ResumeTemplateId) {
+  switch (step) {
+    case "personal":
+      return personalStepSchemaFor(templateId);
+    case "education":
+      return educationStepSchemaFor(templateId);
+    case "skills":
+      return skillsStepSchemaFor(templateId);
+    case "projects":
+      return projectsStepSchema;
+    case "experience":
+      return experienceStepSchemaFor(templateId);
+    case "certifications":
+      return certificationsStepSchema;
+    case "target":
+      return targetStepSchema;
+    default:
+      return personalStepSchema;
+  }
+}
+
 export const resumeFormSchema = personalStepSchema
   .merge(educationStepSchema)
   .merge(skillsStepSchema)
@@ -90,6 +177,7 @@ export const resumeFormSchema = personalStepSchema
   .merge(certificationsStepSchema)
   .merge(targetStepSchema);
 
+export type LanguageEntryValues = z.infer<typeof languageEntrySchema>;
 export type PersonalStepValues = z.infer<typeof personalStepSchema>;
 export type EducationStepValues = z.infer<typeof educationStepSchema>;
 export type SkillsStepValues = z.infer<typeof skillsStepSchema>;
@@ -107,19 +195,22 @@ export const defaultFormValues: ResumeFormValues = {
   githubUrl: "",
   city: "",
   state: "",
+  summary: "",
   education: [
     {
       institution: "",
       degree: "",
       field: "",
+      city: "",
       startYear: "",
       endYear: "",
+      endMonth: "",
       cgpa: "",
     },
   ],
   skills: [],
   softSkills: [],
-  languages: [],
+  languageEntries: [],
   interests: [],
   projects: [
     {
@@ -154,6 +245,10 @@ export function getQualityWarnings(data: ResumeFormValues): string[] {
 
   if (!data.githubUrl.trim()) {
     warnings.push("GitHub URL is missing.");
+  }
+
+  if (!data.summary?.trim()) {
+    warnings.push("Professional summary is missing — required for Templates 002 and 003.");
   }
 
   data.projects.forEach((project, index) => {

@@ -16,6 +16,7 @@ import { CertificationsForm } from "@/components/form/CertificationsForm";
 import { JDInput } from "@/components/form/JDInput";
 import { QualityWarnings } from "@/components/form/QualityWarnings";
 import { ResumeUpload } from "@/components/form/ResumeUpload";
+import { TemplatePicker } from "@/components/form/TemplatePicker";
 import { FormStepNav } from "@/components/form/FormStepNav";
 import { PageContainer } from "@/components/shared/PageContainer";
 import { useFormStore } from "@/stores/formStore";
@@ -26,29 +27,13 @@ import {
   getMissingFieldPaths,
   pruneMissingPaths,
 } from "@/lib/missingFields";
-import type { z } from "zod";
 import {
   defaultFormValues,
-  personalStepSchema,
-  educationStepSchema,
-  skillsStepSchema,
-  projectsStepSchema,
-  experienceStepSchema,
-  certificationsStepSchema,
-  targetStepSchema,
+  getStepSchema,
   type ResumeFormValues,
 } from "@/lib/validators/resumeInput";
 import { FORM_STEPS, FORM_STEP_LABELS, type FormStep } from "@/lib/types";
-
-const stepSchemas: Record<FormStep, z.ZodTypeAny> = {
-  personal: personalStepSchema,
-  education: educationStepSchema,
-  skills: skillsStepSchema,
-  projects: projectsStepSchema,
-  experience: experienceStepSchema,
-  certifications: certificationsStepSchema,
-  target: targetStepSchema,
-};
+import { resolveTemplateId } from "@/lib/templates";
 
 type WizardMode = "choose" | "form";
 
@@ -58,6 +43,7 @@ function GenerateWizard() {
     currentStep,
     formData,
     inputId,
+    templateId,
     missingFieldPaths,
     importedFromUpload,
     setStep,
@@ -65,14 +51,23 @@ function GenerateWizard() {
     prevStep,
     setFormData,
     setInputId,
+    setTemplateId,
     setGenerationId,
     setImportedFromUpload,
     setMissingFieldPaths,
     reset: resetStore,
   } = useFormStore();
 
-  const [mode, setMode] = useState<WizardMode>("choose");
+  const [mode, setMode] = useState<WizardMode>(() =>
+    inputId ? "form" : "choose"
+  );
   const [importNote, setImportNote] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (inputId) {
+      setMode("form");
+    }
+  }, [inputId]);
 
   const form = useForm<ResumeFormValues>({
     defaultValues: hydrateFormValues(formData),
@@ -94,14 +89,14 @@ function GenerateWizard() {
       if (saveTimer.current) clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(async () => {
         try {
-          const id = await saveDraft(data, inputId);
+          const id = await saveDraft(data, inputId, templateId);
           setInputId(id);
         } catch {
           // Draft save requires auth — sessionStorage backup handles offline
         }
       }, 2000);
     },
-    [inputId, setInputId]
+    [inputId, setInputId, templateId]
   );
 
   useEffect(() => {
@@ -115,7 +110,11 @@ function GenerateWizard() {
       const state = useFormStore.getState();
       if (state.importedFromUpload) {
         state.setMissingFieldPaths(
-          pruneMissingPaths(values, state.missingFieldPaths)
+          pruneMissingPaths(
+            values,
+            state.missingFieldPaths,
+            resolveTemplateId(templateId)
+          )
         );
       }
     });
@@ -124,7 +123,10 @@ function GenerateWizard() {
 
   const handleParsed = (data: ResumeFormValues) => {
     const hydratedData = hydrateFormValues(data);
-    const missing = getMissingFieldPaths(hydratedData);
+    const missing = getMissingFieldPaths(
+      hydratedData,
+      resolveTemplateId(templateId)
+    );
 
     setFormData(hydratedData);
     form.reset(hydratedData);
@@ -148,12 +150,17 @@ function GenerateWizard() {
     setStep("personal");
   };
 
+  const resolvedTemplateId = resolveTemplateId(templateId);
   const stepIndex = FORM_STEPS.indexOf(currentStep);
   const progress = ((stepIndex + 1) / FORM_STEPS.length) * 100;
-  const missingByStep = getMissingCountByStep(form.getValues(), missingFieldPaths);
+  const missingByStep = getMissingCountByStep(
+    form.getValues(),
+    missingFieldPaths,
+    resolvedTemplateId
+  );
 
   const validateCurrentStep = async () => {
-    const schema = stepSchemas[currentStep];
+    const schema = getStepSchema(currentStep, resolveTemplateId(templateId));
     const values = form.getValues();
     const result = schema.safeParse(values);
     if (!result.success) {
@@ -173,7 +180,7 @@ function GenerateWizard() {
     if (currentStep === "target") {
       const data = form.getValues();
       try {
-        const id = await saveDraft(data, inputId);
+        const id = await saveDraft(data, inputId, templateId);
         setInputId(id);
         setGenerationId(null);
         router.push("/generate/preview");
@@ -186,25 +193,44 @@ function GenerateWizard() {
     nextStep();
   };
 
-  const formStepProps = { form, missingPaths: missingFieldPaths };
+  const formStepProps = {
+    form,
+    missingPaths: missingFieldPaths,
+  };
 
   const renderStep = () => {
     switch (currentStep) {
       case "personal":
-        return <PersonalDetails {...formStepProps} />;
+        return (
+          <PersonalDetails
+            {...formStepProps}
+            templateId={resolvedTemplateId}
+          />
+        );
       case "education":
         return <EducationForm {...formStepProps} />;
       case "skills":
-        return <SkillsForm {...formStepProps} />;
+        return (
+          <SkillsForm
+            {...formStepProps}
+            templateId={resolvedTemplateId}
+          />
+        );
       case "projects":
         return <ProjectsForm {...formStepProps} />;
       case "experience":
-        return <ExperienceForm {...formStepProps} />;
+        return (
+          <ExperienceForm
+            {...formStepProps}
+            templateId={resolvedTemplateId}
+          />
+        );
       case "certifications":
         return <CertificationsForm {...formStepProps} />;
       case "target":
         return (
           <div className="space-y-6">
+            <TemplatePicker value={templateId} onChange={setTemplateId} />
             <JDInput {...formStepProps} />
             <QualityWarnings data={form.getValues()} />
           </div>
@@ -223,7 +249,10 @@ function GenerateWizard() {
             Upload an existing resume or fill in your details step by step.
           </p>
         </div>
-        <ResumeUpload onParsed={handleParsed} onManual={handleManualStart} />
+        <TemplatePicker value={templateId} onChange={setTemplateId} />
+        <div className="mt-6">
+          <ResumeUpload onParsed={handleParsed} onManual={handleManualStart} />
+        </div>
       </PageContainer>
     );
   }

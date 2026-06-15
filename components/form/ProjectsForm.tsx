@@ -4,15 +4,24 @@ import { UseFormReturn, useFieldArray } from "react-hook-form";
 import { Button } from "@/components/shared/Button";
 import { TextInput } from "@/components/shared/TextInput";
 import { TextArea } from "@/components/shared/TextArea";
-import { isFieldMissing, MISSING_LABEL } from "@/lib/missingFields";
+import { AtsStepCallout } from "@/components/form/AtsStepCallout";
+import { getFieldHighlight } from "@/lib/fieldHighlight";
+import type { AtsStepHint } from "@/lib/atsFieldHints";
 import type { ResumeFormValues } from "@/lib/validators/resumeInput";
 
 interface Props {
   form: UseFormReturn<ResumeFormValues>;
   missingPaths?: string[];
+  atsHints?: Record<string, string>;
+  atsStepHint?: AtsStepHint;
 }
 
-export function ProjectsForm({ form, missingPaths = [] }: Props) {
+export function ProjectsForm({
+  form,
+  missingPaths = [],
+  atsHints = {},
+  atsStepHint,
+}: Props) {
   const {
     register,
     control,
@@ -25,11 +34,22 @@ export function ProjectsForm({ form, missingPaths = [] }: Props) {
     name: "projects",
   });
 
-  const missing = (path: string) => isFieldMissing(path, missingPaths);
+  const highlight = (path: string) =>
+    getFieldHighlight(path, missingPaths, atsHints);
 
   return (
     <div className="space-y-6">
-      {fields.map((field, index) => (
+      <AtsStepCallout hint={atsStepHint} />
+      {fields.map((field, index) => {
+        const isFirst = index === 0;
+        const fieldHints = isFirst ? atsHints : {};
+        const linkHighlight = getFieldHighlight(
+          `projects.${index}.link`,
+          missingPaths,
+          fieldHints
+        );
+
+        return (
         <div
           key={field.id}
           className="rounded-lg border border-hairline p-4 space-y-4"
@@ -52,8 +72,8 @@ export function ProjectsForm({ form, missingPaths = [] }: Props) {
             required
             {...register(`projects.${index}.name`)}
             error={errors.projects?.[index]?.name?.message}
-            missing={missing(`projects.${index}.name`)}
-            missingMessage={MISSING_LABEL}
+            missing={highlight(`projects.${index}.name`).highlight}
+            missingMessage={highlight(`projects.${index}.name`).message}
           />
           <div className="grid gap-4 md:grid-cols-2">
             <TextInput
@@ -62,8 +82,8 @@ export function ProjectsForm({ form, missingPaths = [] }: Props) {
               placeholder="Jan 2024"
               {...register(`projects.${index}.startDate`)}
               error={errors.projects?.[index]?.startDate?.message}
-              missing={missing(`projects.${index}.startDate`)}
-              missingMessage={MISSING_LABEL}
+              missing={highlight(`projects.${index}.startDate`).highlight}
+              missingMessage={highlight(`projects.${index}.startDate`).message}
             />
             <TextInput
               label="End date"
@@ -71,8 +91,8 @@ export function ProjectsForm({ form, missingPaths = [] }: Props) {
               placeholder="Mar 2024 or Present"
               {...register(`projects.${index}.endDate`)}
               error={errors.projects?.[index]?.endDate?.message}
-              missing={missing(`projects.${index}.endDate`)}
-              missingMessage={MISSING_LABEL}
+              missing={highlight(`projects.${index}.endDate`).highlight}
+              missingMessage={highlight(`projects.${index}.endDate`).message}
             />
           </div>
           <TextArea
@@ -84,6 +104,8 @@ export function ProjectsForm({ form, missingPaths = [] }: Props) {
             value={watch(`projects.${index}.description`)}
             {...register(`projects.${index}.description`)}
             error={errors.projects?.[index]?.description?.message}
+            missing={highlight(`projects.${index}.description`).highlight}
+            missingMessage={highlight(`projects.${index}.description`).message}
           />
           <TextInput
             label="Technologies"
@@ -91,8 +113,8 @@ export function ProjectsForm({ form, missingPaths = [] }: Props) {
             placeholder="React, Node.js, MongoDB"
             {...register(`projects.${index}.technologies`)}
             error={errors.projects?.[index]?.technologies?.message}
-            missing={missing(`projects.${index}.technologies`)}
-            missingMessage={MISSING_LABEL}
+            missing={highlight(`projects.${index}.technologies`).highlight}
+            missingMessage={highlight(`projects.${index}.technologies`).message}
           />
           <TextInput
             label="Project link"
@@ -100,11 +122,12 @@ export function ProjectsForm({ form, missingPaths = [] }: Props) {
             placeholder="https://github.com/you/project"
             {...register(`projects.${index}.link`)}
             error={errors.projects?.[index]?.link?.message}
-            missing={missing(`projects.${index}.link`)}
-            missingMessage={MISSING_LABEL}
+            missing={linkHighlight.highlight}
+            missingMessage={linkHighlight.message}
           />
         </div>
-      ))}
+        );
+      })}
       {errors.projects?.message && (
         <p className="text-sm text-error">{errors.projects.message as string}</p>
       )}

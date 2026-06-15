@@ -16,6 +16,7 @@ interface ATSScoreProps {
   tips?: string[] | null;
   matched?: string[] | null;
   missed?: string[] | null;
+  subtitle?: string;
 }
 
 function ScoreGauge({ score }: { score: number }) {
@@ -117,7 +118,7 @@ function CategoryRow({
   );
 }
 
-export function ATSScore({ score, tips, matched, missed }: ATSScoreProps) {
+export function ATSScore({ score, tips, matched, missed, subtitle }: ATSScoreProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   if (score === null || score === undefined) return null;
@@ -129,7 +130,13 @@ export function ATSScore({ score, tips, matched, missed }: ATSScoreProps) {
   return (
     <Card className="overflow-hidden p-0">
       <div className="border-b border-hairline-soft px-6 pb-6 pt-8 text-center md:px-8">
-        <h2 className="mb-4 text-base font-semibold text-ink">Your Score</h2>
+        <h2 className="mb-1 text-base font-semibold text-ink">
+          Your AI-Optimized Resume Score
+        </h2>
+        {subtitle && (
+          <p className="mb-4 text-sm leading-relaxed text-muted">{subtitle}</p>
+        )}
+        {!subtitle && <div className="mb-4" />}
         <ScoreGauge score={score} />
         <p
           className="mt-1 text-4xl font-bold tabular-nums tracking-tight"
