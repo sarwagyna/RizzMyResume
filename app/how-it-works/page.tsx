@@ -1,7 +1,21 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/shared/Button";
 import { Card } from "@/components/shared/Card";
 import { PageContainer } from "@/components/shared/PageContainer";
+import { JsonLd } from "@/components/seo/JsonLd";
+import {
+  breadcrumbJsonLd,
+  createPageMetadata,
+  howToJsonLd,
+} from "@/lib/seo";
+
+export const metadata: Metadata = createPageMetadata({
+  title: "How it works — AI resume builder pipeline",
+  description:
+    "See how Rizz My Resume turns your profile into an ATS-optimised PDF: form or upload, AI writing, LaTeX compile, preview, and ₹50 unlock.",
+  path: "/how-it-works",
+});
 
 const PIPELINE_STEPS = [
   {
@@ -44,6 +58,20 @@ const PIPELINE_STEPS = [
 export default function HowItWorksPage() {
   return (
     <PageContainer size="md" className="space-y-10">
+      <JsonLd
+        data={[
+          breadcrumbJsonLd([
+            { name: "Home", path: "/" },
+            { name: "How it works", path: "/how-it-works" },
+          ]),
+          howToJsonLd(
+            PIPELINE_STEPS.map((step) => ({
+              name: step.title,
+              text: step.description,
+            }))
+          ),
+        ]}
+      />
       <div className="max-w-2xl">
         <p className="mb-2 text-sm font-medium uppercase tracking-wide text-muted">
           Pipeline

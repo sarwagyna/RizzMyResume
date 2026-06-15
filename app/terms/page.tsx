@@ -1,6 +1,15 @@
+import type { Metadata } from "next";
 import { LegalPage } from "@/components/shared/LegalPage";
 import Link from "next/link";
 import { COMPANY } from "@/lib/company";
+import { createPageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = createPageMetadata({
+  title: "Terms of service",
+  description: `Terms governing use of ${COMPANY.product}, payments, AI-generated content, and user responsibilities. ${COMPANY.name}.`,
+  path: "/terms",
+  ogType: "article",
+});
 
 export default function TermsPage() {
   return (

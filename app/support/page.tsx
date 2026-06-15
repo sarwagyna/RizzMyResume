@@ -1,8 +1,17 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Card } from "@/components/shared/Card";
 import { Button } from "@/components/shared/Button";
 import { PageContainer } from "@/components/shared/PageContainer";
 import { SUPPORT_EMAIL } from "@/components/shared/Footer";
+import { createPageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = createPageMetadata({
+  title: "Support — troubleshooting",
+  description:
+    "Fix preview loading, payment issues, and download problems on Rizz My Resume. Step-by-step guides and contact options.",
+  path: "/support",
+});
 
 const ISSUES = [
   {

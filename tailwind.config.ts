@@ -41,9 +41,12 @@ const config: Config = {
         error: "#ef4444",
       },
       fontFamily: {
-        display: ["var(--font-inter)", "Inter", "sans-serif"],
+        display: ["var(--font-display)", "var(--font-inter)", "Inter", "sans-serif"],
         sans: ["var(--font-inter)", "Inter", "sans-serif"],
         mono: ["JetBrains Mono", "ui-monospace", "monospace"],
+      },
+      maxWidth: {
+        content: "1200px",
       },
       borderRadius: {
         xs: "4px",
@@ -60,6 +63,15 @@ const config: Config = {
       },
       boxShadow: {
         card: "0 1px 2px rgba(0,0,0,0.05), 0 4px 12px rgba(0,0,0,0.08)",
+      },
+      keyframes: {
+        "fade-up": {
+          "0%": { opacity: "0", transform: "translateY(8px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+      },
+      animation: {
+        "fade-up": "fade-up 0.4s ease-out forwards",
       },
     },
   },

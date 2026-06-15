@@ -1,5 +1,14 @@
+import type { Metadata } from "next";
 import { LegalPage } from "@/components/shared/LegalPage";
 import { COMPANY } from "@/lib/company";
+import { createPageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = createPageMetadata({
+  title: "Refund policy",
+  description: `Refund and cancellation rules for ${COMPANY.product} resume generation payments via Razorpay.`,
+  path: "/refund-policy",
+  ogType: "article",
+});
 
 export default function RefundPolicyPage() {
   return (

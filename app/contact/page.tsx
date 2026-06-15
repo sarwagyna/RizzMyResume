@@ -1,7 +1,16 @@
+import type { Metadata } from "next";
 import { Card } from "@/components/shared/Card";
 import { PageContainer } from "@/components/shared/PageContainer";
 import { COMPANY } from "@/lib/company";
+import { createPageMetadata } from "@/lib/seo";
 import Link from "next/link";
+
+export const metadata: Metadata = createPageMetadata({
+  title: "Contact us",
+  description:
+    "Reach Sarwagyna Private Limited for billing, refunds, privacy, or account questions about Rizz My Resume.",
+  path: "/contact",
+});
 
 export default function ContactPage() {
   return (

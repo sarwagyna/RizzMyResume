@@ -1,5 +1,14 @@
+import type { Metadata } from "next";
 import { LegalPage } from "@/components/shared/LegalPage";
 import { COMPANY } from "@/lib/company";
+import { createPageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = createPageMetadata({
+  title: "Privacy policy",
+  description: `How ${COMPANY.product} by ${COMPANY.name} collects, uses, and protects your data. Effective ${COMPANY.effectiveDate}.`,
+  path: "/privacy",
+  ogType: "article",
+});
 
 export default function PrivacyPolicyPage() {
   return (

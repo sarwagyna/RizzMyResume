@@ -1,6 +1,16 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Card } from "@/components/shared/Card";
 import { PageContainer } from "@/components/shared/PageContainer";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { breadcrumbJsonLd, createPageMetadata, faqJsonLd } from "@/lib/seo";
+
+export const metadata: Metadata = createPageMetadata({
+  title: "Help centre — FAQs",
+  description:
+    "Answers about creating resumes, ₹50 payment, 24-hour file retention, editing previews, and Razorpay payment methods on Rizz My Resume.",
+  path: "/help",
+});
 
 const FAQ = [
   {
@@ -28,6 +38,15 @@ const FAQ = [
 export default function HelpPage() {
   return (
     <PageContainer size="sm" className="space-y-8">
+      <JsonLd
+        data={[
+          breadcrumbJsonLd([
+            { name: "Home", path: "/" },
+            { name: "Help", path: "/help" },
+          ]),
+          faqJsonLd(FAQ.map((item) => ({ question: item.q, answer: item.a }))),
+        ]}
+      />
       <div>
         <p className="mb-2 text-sm font-medium uppercase tracking-wide text-muted">
           Help centre
