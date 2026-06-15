@@ -1,12 +1,28 @@
 import { createBrowserClient } from "@supabase/ssr";
 import { getClientEnv } from "@/lib/env";
 
+let browserClient: ReturnType<typeof createBrowserClient> | null = null;
+
 export function createClient() {
-  const env = getClientEnv();
-  return createBrowserClient(
-    env.NEXT_PUBLIC_SUPABASE_URL,
-    env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  );
+  if (typeof window === "undefined") {
+    const url =
+      process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://placeholder.invalid";
+    const key =
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
+      "placeholder-anon-key-for-ssr";
+    return createBrowserClient(url, key);
+  }
+
+  if (!browserClient) {
+    const env = getClientEnv();
+    browserClient = createBrowserClient(
+      env.NEXT_PUBLIC_SUPABASE_URL,
+      env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    );
+  }
+
+  return browserClient;
 }
 
 export async function invokeFunction<T>(

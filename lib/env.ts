@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getAppUrl } from "@/lib/site";
+import { getAppUrl, PRODUCTION_APP_URL } from "@/lib/site";
 
 const clientEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
@@ -25,34 +25,50 @@ function readRawEnv() {
   };
 }
 
-/** Validated public env for browser + server components. Throws in production if invalid. */
+function isBuildPhase(): boolean {
+  return process.env.NEXT_PHASE === "phase-production-build";
+}
+
+function buildFallbackEnv(): ClientEnv {
+  const raw = readRawEnv();
+  return {
+    NEXT_PUBLIC_SUPABASE_URL:
+      raw.NEXT_PUBLIC_SUPABASE_URL ?? "http://127.0.0.1:54321",
+    NEXT_PUBLIC_SUPABASE_ANON_KEY:
+      raw.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "dev-anon-key-placeholder0000",
+    NEXT_PUBLIC_APP_URL: raw.NEXT_PUBLIC_APP_URL ?? PRODUCTION_APP_URL,
+    NEXT_PUBLIC_RAZORPAY_KEY_ID:
+      raw.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? "rzp_test_buildplaceholder",
+  };
+}
+
+/**
+ * Validated public env. Strict in the browser at runtime; lenient during
+ * `next build` / SSR so Vercel can prerender before env is wired everywhere.
+ */
 export function getClientEnv(): ClientEnv {
   if (cachedEnv) return cachedEnv;
 
   const parsed = clientEnvSchema.safeParse(readRawEnv());
+  const lenient =
+    isBuildPhase() ||
+    typeof window === "undefined";
 
   if (!parsed.success) {
-    if (process.env.NODE_ENV === "production") {
-      const fields = parsed.error.flatten().fieldErrors;
-      throw new Error(
-        `Invalid public environment configuration: ${JSON.stringify(fields)}`
-      );
+    if (lenient || process.env.NODE_ENV !== "production") {
+      cachedEnv = buildFallbackEnv();
+      return cachedEnv;
     }
 
-    cachedEnv = {
-      NEXT_PUBLIC_SUPABASE_URL:
-        readRawEnv().NEXT_PUBLIC_SUPABASE_URL ?? "http://127.0.0.1:54321",
-      NEXT_PUBLIC_SUPABASE_ANON_KEY:
-        readRawEnv().NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "dev-anon-key-placeholder",
-      NEXT_PUBLIC_APP_URL: getAppUrl(),
-      NEXT_PUBLIC_RAZORPAY_KEY_ID:
-        readRawEnv().NEXT_PUBLIC_RAZORPAY_KEY_ID ?? "rzp_test_devplaceholder",
-    };
-    return cachedEnv;
+    const fields = parsed.error.flatten().fieldErrors;
+    throw new Error(
+      `Invalid public environment configuration: ${JSON.stringify(fields)}`
+    );
   }
 
   if (
     process.env.NODE_ENV === "production" &&
+    typeof window !== "undefined" &&
     !parsed.data.NEXT_PUBLIC_RAZORPAY_KEY_ID.startsWith("rzp_live_")
   ) {
     console.warn(
@@ -64,8 +80,7 @@ export function getClientEnv(): ClientEnv {
   return cachedEnv;
 }
 
-export function assertProductionEnv(): void {
-  if (process.env.NODE_ENV === "production") {
-    getClientEnv();
-  }
+/** Clear cache (tests only). */
+export function resetClientEnvCache(): void {
+  cachedEnv = null;
 }

@@ -2,7 +2,9 @@
 
 ## Environment setup
 
-### Vercel (frontend)
+### Vercel environment
+
+Set these in **Vercel → Project → Settings → Environment Variables** before deploying (required for `next build` to embed `NEXT_PUBLIC_*` values):
 
 | Variable | Required |
 |---|---|

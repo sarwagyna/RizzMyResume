@@ -23,14 +23,13 @@ function LoginForm() {
   const [error, setError] = useState<string | null>(urlError);
   const [sent, setSent] = useState(false);
 
-  const supabase = createClient();
-
   useEffect(() => {
     if (urlError) setError(urlError);
   }, [urlError]);
 
   useEffect(() => {
     let active = true;
+    const supabase = createClient();
 
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!active) return;
@@ -44,13 +43,14 @@ function LoginForm() {
     return () => {
       active = false;
     };
-  }, [router, redirect, supabase]);
+  }, [router, redirect]);
 
   const sendMagicLink = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
 
+    const supabase = createClient();
     const { error: authError } = await supabase.auth.signInWithOtp({
       email,
       options: {

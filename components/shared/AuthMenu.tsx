@@ -11,7 +11,6 @@ import { cn } from "@/lib/utils";
 
 export function AuthMenu() {
   const router = useRouter();
-  const supabase = createClient();
   const menuRef = useRef<HTMLDivElement>(null);
 
   const [user, setUser] = useState<User | null>(null);
@@ -21,6 +20,7 @@ export function AuthMenu() {
 
   useEffect(() => {
     let active = true;
+    const supabase = createClient();
 
     supabase.auth.getUser().then(({ data: { user: currentUser } }) => {
       if (!active) return;
@@ -39,7 +39,7 @@ export function AuthMenu() {
       active = false;
       subscription.unsubscribe();
     };
-  }, [supabase]);
+  }, []);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -66,7 +66,7 @@ export function AuthMenu() {
   const handleSignOut = async () => {
     setSigningOut(true);
     setMenuOpen(false);
-    await supabase.auth.signOut();
+    await createClient().auth.signOut();
     router.push("/login");
     router.refresh();
     setSigningOut(false);
